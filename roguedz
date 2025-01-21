@@ -505,7 +505,9 @@ DiscordButton.MouseButton1Click:Connect(function()
 end)
 
 game:GetService("Players").LocalPlayer.Chatted:Connect(function(msg)
-    handleCommand(msg)
+    if msg:sub(1,1) == "/" then
+        handleCommand(msg)
+    end
 end)
 
 local function hookRemotes()
