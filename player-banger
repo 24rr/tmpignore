@@ -1,0 +1,295 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local PlayerInput = Instance.new("TextBox")
+local FuckButton = Instance.new("TextButton")
+local PlayerList = Instance.new("ScrollingFrame")
+local StopButton = Instance.new("TextButton")
+local SpeedInput = Instance.new("TextBox")
+local UICorner_Main = Instance.new("UICorner")
+local UIStroke_Main = Instance.new("UIStroke")
+
+
+ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.ResetOnSpawn = false
+
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.Position = UDim2.new(0.5, -175, 0.5, -150)
+MainFrame.Size = UDim2.new(0, 350, 0, 300)
+MainFrame.Active = true
+MainFrame.Draggable = true
+UICorner_Main.Parent = MainFrame
+UICorner_Main.CornerRadius = UDim.new(0, 8)
+UIStroke_Main.Parent = MainFrame
+UIStroke_Main.Color = Color3.fromRGB(60, 60, 65)
+UIStroke_Main.Thickness = 1
+
+Title.Name = "Title"
+Title.Parent = MainFrame
+Title.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "Player Fucker"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 18
+local UICorner_Title = Instance.new("UICorner")
+UICorner_Title.Parent = Title
+UICorner_Title.CornerRadius = UDim.new(0, 8)
+
+PlayerInput.Name = "PlayerInput"
+PlayerInput.Parent = MainFrame
+PlayerInput.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+PlayerInput.Position = UDim2.new(0.05, 0, 0.18, 0)
+PlayerInput.Size = UDim2.new(0.9, 0, 0, 35)
+PlayerInput.Font = Enum.Font.Gotham
+PlayerInput.PlaceholderText = "Enter player name..."
+PlayerInput.Text = ""
+PlayerInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlayerInput.TextSize = 14
+local UICorner_Input = Instance.new("UICorner")
+UICorner_Input.Parent = PlayerInput
+UICorner_Input.CornerRadius = UDim.new(0, 6)
+
+FuckButton.Name = "FuckButton"
+FuckButton.Parent = MainFrame
+FuckButton.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+FuckButton.Position = UDim2.new(0.05, 0, 0.33, 0)
+FuckButton.Size = UDim2.new(0.9, 0, 0, 35)
+FuckButton.Font = Enum.Font.GothamBold
+FuckButton.Text = "Fuck Player"
+FuckButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FuckButton.TextSize = 14
+local UICorner_Button = Instance.new("UICorner")
+UICorner_Button.Parent = FuckButton
+UICorner_Button.CornerRadius = UDim.new(0, 6)
+
+PlayerList.Name = "PlayerList"
+PlayerList.Parent = MainFrame
+PlayerList.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+PlayerList.Position = UDim2.new(0.05, 0, 0.63, 0)
+PlayerList.Size = UDim2.new(0.9, 0, 0.32, 0)
+PlayerList.ScrollBarThickness = 4
+PlayerList.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 65)
+local UICorner_List = Instance.new("UICorner")
+UICorner_List.Parent = PlayerList
+UICorner_List.CornerRadius = UDim.new(0, 6)
+
+StopButton.Name = "StopButton"
+StopButton.Parent = MainFrame
+StopButton.BackgroundColor3 = Color3.fromRGB(255, 69, 58)
+StopButton.Position = UDim2.new(0.05, 0, 0.48, 0)
+StopButton.Size = UDim2.new(0.9, 0, 0, 35)
+StopButton.Font = Enum.Font.GothamBold
+StopButton.Text = "Stop Fucking"
+StopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StopButton.TextSize = 14
+StopButton.Visible = false
+local UICorner_Stop = Instance.new("UICorner")
+UICorner_Stop.Parent = StopButton
+UICorner_Stop.CornerRadius = UDim.new(0, 6)
+
+SpeedInput.Name = "SpeedInput"
+SpeedInput.Parent = MainFrame
+SpeedInput.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+SpeedInput.Position = UDim2.new(0.05, 0, 0.88, 0)
+SpeedInput.Size = UDim2.new(0.9, 0, 0, 30)
+SpeedInput.Font = Enum.Font.Gotham
+SpeedInput.PlaceholderText = "Speed multiplier (0.1-5)"
+SpeedInput.Text = "1"
+SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedInput.TextSize = 14
+local UICorner_Speed = Instance.new("UICorner")
+UICorner_Speed.Parent = SpeedInput
+UICorner_Speed.CornerRadius = UDim.new(0, 6)
+
+local isAnimating = false
+local currentConnection = nil
+local animationSpeed = 1
+
+
+local function updatePlayerList(searchText)
+    
+    for _, child in ipairs(PlayerList:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    local yOffset = 0
+    for _, player in ipairs(Players:GetPlayers()) do
+        if searchText == "" or string.find(string.lower(player.Name), string.lower(searchText)) or 
+           string.find(string.lower(player.DisplayName), string.lower(searchText)) then
+            local button = Instance.new("TextButton")
+            button.Size = UDim2.new(1, -8, 0, 25)
+            button.Position = UDim2.new(0, 4, 0, yOffset)
+            button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            button.Text = player.DisplayName .. " (@" .. player.Name .. ")"
+            button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            button.TextSize = 12
+            button.Font = Enum.Font.Gotham
+            button.Parent = PlayerList
+            button.MouseButton1Click:Connect(function()
+                PlayerInput.Text = player.Name
+            end)
+            yOffset = yOffset + 30
+        end
+    end
+    PlayerList.CanvasSize = UDim2.new(0, 0, 0, yOffset)
+end
+
+local function customAnimation(character, targetCharacter)
+    if isAnimating then return end
+    isAnimating = true
+    StopButton.Visible = true
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    local targetHRP = targetCharacter:FindFirstChild("HumanoidRootPart")
+    local humanoid = character:FindFirstChild("Humanoid")
+    
+    if humanoidRootPart and targetHRP and humanoid then
+        local startPos = targetHRP.CFrame * CFrame.new(0, 0.8, 1.5)
+        humanoidRootPart.CFrame = startPos
+        
+        local originalHipHeight = humanoid.HipHeight
+        humanoid.HipHeight = 0
+        
+        local startTime = tick()
+        local baseCycleTime = 0.8
+        
+        currentConnection = RunService.RenderStepped:Connect(function()
+            if not isAnimating then
+                currentConnection:Disconnect()
+                return
+            end
+            
+            local elapsed = (tick() - startTime) % (baseCycleTime / animationSpeed)
+            local progress = elapsed / (baseCycleTime / animationSpeed)
+            
+            local forwardOffset = math.sin(progress * math.pi * 2) * 0.4
+            local upwardOffset = 0.8 + (math.abs(math.cos(progress * math.pi * 2)) * 0.1)
+            
+            local rotationAngle = math.sin(progress * math.pi * 2) * 0.2
+            
+            local newPos = targetHRP.CFrame * CFrame.new(0, upwardOffset, 1.5 + forwardOffset) * CFrame.Angles(rotationAngle, 0, 0)
+            humanoidRootPart.CFrame = newPos
+        end)
+        
+        spawn(function()
+            while isAnimating do
+                wait()
+            end
+            if character:FindFirstChild("Humanoid") then
+                character.Humanoid.HipHeight = originalHipHeight
+            end
+        end)
+    end
+end
+
+local function stopAnimation()
+    if not isAnimating then return end
+    
+    local character = Players.LocalPlayer.Character
+    if character then
+        isAnimating = false
+        if currentConnection then
+            currentConnection:Disconnect()
+            currentConnection = nil
+        end
+        
+        
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.HipHeight = 2 
+        end
+        
+        
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+            humanoidRootPart.CFrame = CFrame.new(humanoidRootPart.Position) * CFrame.new(0, 0, 0)
+        end
+    end
+    
+    StopButton.Visible = false
+end
+
+local function teleportBehindPlayer(targetPlayer)
+    local character = Players.LocalPlayer.Character
+    local targetCharacter = targetPlayer.Character
+    
+    if character and targetCharacter then
+        local targetHRP = targetCharacter:FindFirstChild("HumanoidRootPart")
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        
+        if targetHRP and humanoidRootPart then
+            local targetCFrame = targetHRP.CFrame
+            
+            local behindPosition = targetCFrame * CFrame.new(0, 0.8, 1.5)
+            
+            local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Linear)
+            local tween = TweenService:Create(humanoidRootPart, tweenInfo, {
+                CFrame = behindPosition
+            })
+            
+            tween.Completed:Connect(function()
+                customAnimation(character, targetCharacter)
+            end)
+            
+            tween:Play()
+        end
+    end
+end
+
+
+PlayerInput:GetPropertyChangedSignal("Text"):Connect(function()
+    updatePlayerList(PlayerInput.Text)
+end)
+
+FuckButton.MouseButton1Click:Connect(function()
+    local targetPlayer = Players:FindFirstChild(PlayerInput.Text)
+    if targetPlayer then
+        teleportBehindPlayer(targetPlayer)
+    end
+end)
+
+StopButton.MouseButton1Click:Connect(stopAnimation)
+
+SpeedInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local newSpeed = tonumber(SpeedInput.Text)
+        if newSpeed and newSpeed >= 0.1 and newSpeed <= 5 then
+            animationSpeed = newSpeed
+        else
+            SpeedInput.Text = tostring(animationSpeed)
+        end
+    end
+end)
+
+
+updatePlayerList("")
+
+
+local isVisible = true
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        isVisible = not isVisible
+        ScreenGui.Enabled = isVisible
+    end
+end)
+
+
+local function cleanup()
+    if isAnimating then
+        stopAnimation()
+    end
+    if ScreenGui then
+        ScreenGui:Destroy()
+    end
+end
